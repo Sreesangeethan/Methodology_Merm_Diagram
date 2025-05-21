@@ -1,0 +1,53 @@
+flowchart LR
+    %% -------  L E G E N D  (optional)--------
+    subgraph Legend[Legend]
+        direction LR
+        A1((  )):::data -->|"raw / processed"| B1[ ]
+        style A1 fill:#a9d3ff,stroke:#036
+        style B1 fill:#d3ffe8,stroke:#036
+    end
+    classDef data fill:#a9d3ff,stroke:#036,color:#036
+    classDef proc fill:#d3ffe8,stroke:#036,color:#036
+    classDef ui fill:#fff3b0,stroke:#a98000,color:#5f4d00
+    classDef db fill:#f0e1ff,stroke:#6b3fa0,color:#392060
+    classDef model fill:#ffe0e6,stroke:#c01d5a,color:#751136
+    classDef dashed stroke-dasharray: 4 4
+    
+    %% -------  S T A G E  1  -------------------
+    subgraph S1[Stage 1 – Content-Indexing Pipeline]
+        direction TB
+        LMS[(LMS\nSlides · PDF · Forum)]:::data -->|1 Extract| ETL[Extraction &\nPre-processing]:::proc
+        ETL -->|2 Embed| Vec[Vector Index\n(FAISS)]:::db
+        ETL -->|2 Tokenise| BM25[Keyword Index\n(BM25)]:::db
+    end
+    
+    %% -------  S T A G E  2  -------------------
+    subgraph S2[Stage 2 – Retrieval-Augmented Quiz Generator]
+        direction TB
+        Vec -- top-k --> Prompt
+        BM25 -- fallback --> Prompt
+        Learner(Learner\nProfile):::data -->|prefs & history| Prompt[[Prompt Assembler]]:::proc
+        Prompt -->|context prompt| LLM[Llama 2-7B\nLoRA]:::model
+        LLM -->|MCQ JSON| QuizObj[Quiz\nObject]:::data
+    end
+    
+    %% -------  S T A G E  3  -------------------
+    subgraph S3[Stage 3 – Adaptive Feedback & Analytics]
+        direction TB
+        QuizObj -->|WebSocket| UIStudent[Student Chat UI]:::ui
+        UIStudent -->|answers| Analytics[Gap Analytics\nEngine]:::proc
+        Analytics -->|Gap Report| Dashboard[Instructor Dashboard]:::ui
+        Analytics -.recommend.->|Reinforcement links| Vec
+    end
+    
+    %% -------  F E E D B A C K  L O O P S  --------
+    Analytics -.update difficulty.-> Prompt:::proc
+    Dashboard -.manual tags.-> Vec:::db
+    
+    %% -------  S T Y L I N G  ----------------------
+    class LMS,QuizObj,Learner,data;
+    class ETL,Prompt,Analytics,proc;
+    class Vec,BM25,db;
+    class UIStudent,Dashboard,ui;
+    class LLM,model;
+    linkStyle 9,10 stroke-dasharray:4 4;  %% dotted feedback links
