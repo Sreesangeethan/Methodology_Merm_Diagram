@@ -1,0 +1,12 @@
+
+</details>
+
+3. **Save** the file.
+
+---
+
+### 4  Commit & push
+```bash
+git add docs/methodology.md
+git commit -m "Add Mermaid methodology diagram"
+git push origin main
